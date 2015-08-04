@@ -1,0 +1,447 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml">
+ <head>
+  <link rel="SHORTCUT ICON" href="/favicon.ico" type="image/x-icon" />
+  <link rel="canonical" href="http://www.usnaviguide.com/zip.htm">
+  <meta http-equiv="refresh" content="7200">
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7"/>
+  <meta name="description" content="The Most Accurate Free USA Zip Code Map Anywhere! Find USPS postal Zip codes by address or click on the map to display the zip code as a boundary map."/>
+  <title>Free USPS Lookup and Boundary Map</title>
+  <style type="text/css">
+  .TEXT0
+  {
+   font-family: Verdana, Sans-Serif, monospace;
+   font-size: .6em;
+  }
+  .TEXT1
+  {
+   font-family: Verdana, Sans-Serif, monospace;
+   font-size: .8em;
+  }
+  .TEXT2
+  {
+   font-family: Verdana, Sans-Serif, monospace;
+   font-size: 1em;
+  }
+  .HTEXT0
+  {
+   font-family: Verdana, Sans-Serif, monospace;
+   font-size: .6em;
+   color:red;
+  }
+  .HTEXT1
+  {
+   font-family: Verdana, Sans-Serif, monospace;
+   font-size: .8em;
+   color:red;
+  }
+  .HTEXT2
+  {
+   font-family: Verdana, Sans-Serif, monospace;
+   font-size: 1em;
+   color:red;
+  }
+  .HTEXT3
+  {
+   font-family: Verdana, Sans-Serif, monospace;
+   font-size: 1.5em;
+   color:red;
+  }
+  </style>
+
+  <script type="text/javascript">
+   // Stop some malicious behaviors...
+   if ( top != self)
+   {
+    top.location.replace(document.location);
+    alert("For security reasons, framing is not allowed; click OK to remove the frames.")
+   }       
+   if ( location.search.length > 0 )
+   {
+    location.search = '' ;
+   }
+  </script>
+
+  <script type="text/javascript" src="http://apis.google.com/js/plusone.js"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
+  <script>
+   var map;
+   var geocoder;
+   var imageMapType;
+   var ZIP_MAPTYPE_ID = 'ziphybrid';
+   var chkar = [ ] ;					// Zips Found
+   var zipar = [ ] ;					// Zips Found
+   var marar = [ ] ;					// Marker Array
+   var icons = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'] ;
+   var lastclick = "" ;					// Last Clicked Point
+   var infowindow ;
+   var adUnit ;
+
+   var tskey = "a88abbb069" ;
+
+   function initialize() {
+
+    geocoder = new google.maps.Geocoder();
+
+    imageMapType = new google.maps.ImageMapType({
+     getTileUrl: function(coord, zoom) {
+      if (zoom < 5 || zoom > 18 ) {
+       return null;
+      }
+      if (zoom <= 13 ) {
+       var url = "http://storage.googleapis.com/zipmap/tiles/" + zoom + "/" + coord.x + "/" + coord.y + ".png" ;
+     console.log("Url is " , url) ; 
+       return url ;
+      }
+      
+      var server = coord.x % 6 ;
+      var url = "http://ts" + server + ".usnaviguide.com/tileserver.pl?X=" + coord.x + "&Y=" + coord.y + "&Z=" + zoom + "&T=" + tskey + "&S=Z1001" ;
+      return url ;
+     },
+     tileSize: new google.maps.Size(256, 256),
+     opacity:.5,
+     name:'Zip Code'
+    });
+   
+    var mapOptions = {
+     minZoom: 5,
+     maxZoom: 18,
+     zoom: 5,
+     center: new google.maps.LatLng(35, -89),
+     mapTypeIds: google.maps.MapTypeId.ROADMAP
+
+    };
+
+    map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
+
+    map.overlayMapTypes.push(imageMapType);
+
+    google.maps.event.addListener(map, 'click', function(e) {
+     zippoly(e.latLng,'');
+    });
+    infowindow = new google.maps.InfoWindow();
+   }
+
+// Find a zip code and cause it to be drawn on the map...
+
+   function findzip( zipcode )
+   {
+    if ( zipcode.address.value )
+    {
+     showAddress(zipcode.address.value) ;
+    } else if ( CheckZip( zipcode.zip.value ) > -1 )
+    {
+     alert("Zip Code Keyed Has Already Been Selected.") ;
+    } else
+    {
+     zippoly( 0, zipcode.zip.value ) ;
+    }
+   }
+
+// Clear overlays, Div area and restore map...
+
+   function clearmap( zipcode )
+   {
+    zipcode.zip.value = "" ;
+    document.getElementById("message").innerHTML = "" ;
+    for (var i = 0; i < marar.length; i++)
+    {
+     marar[i].setMap(null);
+    }
+    lastclick = "" ;
+    zipar = [ ] ;
+    chkar = [ ] ;
+    marar = [ ] ;
+   }
+
+// Check for a double click...
+
+   function checkclick ( point )
+   {
+    if ( lastclick != point )
+    {
+     lastclick = point ;
+     zippoly( point, '' ) ;
+    }
+   }
+
+// Open an Infowindow when the zip link is clicked in the message div...
+        
+   function zipLink(zip)
+   {
+    for (var i = 0; i < zipar.length; i++)
+    {
+     if ( zipar[i] == zip )
+     {
+      break ;
+     } 
+    }
+    google.maps.event.trigger(marar[i], 'click') ;
+   }
+
+// Check to see if a Zip has already been selected...
+        
+   function CheckZip(zip)
+   {
+    for (var i = 0; i < chkar.length; i++)
+    {
+     if ( chkar[i] == zip )
+     {
+      return(i) ;
+     } 
+    }
+    return(-1) ;
+   }
+
+// Find a zip code and return the coordinates along with other information...
+
+   function zippoly( point, zip )
+   {
+    if (window.XMLHttpRequest)
+    {		// code for IE7+, Firefox, Chrome, Opera, Safari
+     var request = new XMLHttpRequest() ;
+    } else
+    {		// code for IE6, IE5
+     var request = new ActiveXObject("Microsoft.XMLHTTP") ;
+    }
+
+    var parms = "POINT=" + point ;
+    if ( zip )
+    {
+     parms = "ZIP=" + zip ;
+    }
+    request.open("POST", "zip.pl", true);
+    request.setRequestHeader('Content-Type','application/x-www-form-urlencoded') ;	// Thanks to Darkstar 3D!
+    request.onreadystatechange = function() 
+    {
+     document.getElementById("loading").innerHTML = "Loading, please wait..." ;
+
+     if (request.readyState == 4)
+     {
+      var xmlDoc = request.responseXML ;
+      try
+      {
+       if ( marar.length == 0 )
+       {
+        document.getElementById("message").innerHTML = "" ;
+       }
+       var info = xmlDoc.documentElement.getElementsByTagName("info") ;
+       var zipcode = info[0].getAttribute("zipcode") ;
+       var hitrem = parseInt(info[0].getAttribute("hitrem")) ;
+       if ( hitrem <= 1 )
+       {
+        alert("You have exhausted your requests for this time period. Please come back in 2 hours.") ;
+       } else if ( zipcode == "" )
+       {
+        alert("Area clicked not defined by a zip code") ;
+       } else
+       {
+        var zipindex = CheckZip( zipcode ) ;
+        if ( zipindex > -1 )
+        {
+         google.maps.event.trigger(marar[zipindex], "click") ;
+        } else
+        {
+         var lastpoint	= map.getCenter() ;
+         var point	= lastpoint ;
+         var zipname	= info[0].getAttribute("zipname") ;
+         var uspsst	= info[0].getAttribute("uspsst") ;
+         var stname	= info[0].getAttribute("stname") ;
+         var ctyname	= info[0].getAttribute("ctyname") ;
+         var county	= info[0].getAttribute("county") ;
+         var complex	= info[0].getAttribute("complex") ;
+         var pointzip	= info[0].getAttribute("pointzip") ;
+
+         chkar.push(zipcode) ;
+         var points = [] ;
+         var markers = xmlDoc.documentElement.getElementsByTagName("marker1");
+         for (var i = 0; i < markers.length; i++)
+         {
+          point = new google.maps.LatLng(parseFloat(markers[i].getAttribute("lat")),parseFloat(markers[i].getAttribute("lng"))) ;
+          html	= "<div style='width:200px; text-align:left;'><b>Zip Code:</b> " + zipcode + 
+                  "<br>" + zipname + 
+                  "<br>" + uspsst + " - " + stname +
+                  "<br>County:" + county + " - " + ctyname +
+                  "<br>Area Code(s):" + complex ;
+          if ( pointzip == 1 )
+          {
+           html += "<br>Point Zip - Not Mapped" ;
+          }
+
+          html	+= "</div>" ;
+          var number = marar.length ;
+          if ( number > icons.length )
+          {
+           number = icons.length ;
+          }
+          marar.push( createMarker( point, html, number ) ) ;
+          zipar.push(zipcode + "A") ;
+          var html	= icons[number] + " <a href=\"javascript:zipLink('" + zipcode + "A" + "')\">" + zipcode ;
+          html += "</a><br>&nbsp;" + zipname + ", " + uspsst + "<br>&nbsp;Area Code: " + complex + "<br>" ; 
+          document.getElementById("message").innerHTML =  html + document.getElementById("message").innerHTML ;
+         }
+         if ( point != lastpoint )
+         {
+          if( chkar.length > 1 )
+          {
+           map.setCenter( point ) ;
+          } else
+          {
+           map.setCenter( point ) ;
+           map.setZoom( 13 ) ;
+          }
+         }
+        }
+       }
+      } catch(e)
+      {
+       alert("Some error occured during program processing:" + e) ;
+      }       
+      document.getElementById("loading").innerHTML = "" ;
+     }
+    }
+    request.send(parms);
+   }
+
+// Create a marker at a point with an infowindow...
+
+   function createMarker(point, html, number) 
+   {
+    var image = { url: 'http://www.google.com/intl/en_us/mapfiles/marker' + icons[number] + '.png' } ;
+    var marker = new google.maps.Marker(
+    {
+      position: new google.maps.LatLng(point.lat(), point.lng()),
+      icon: image,
+      map: map
+    });
+
+    google.maps.event.addListener(marker, 'click', (function (marker, number)
+    {
+     return function ()
+     {
+      infowindow.setContent(html);
+      infowindow.open(map, marker);
+     }
+    })(marker, number));
+
+    return marker;
+   }
+
+   // Find the address using the geocoder...
+
+   function showAddress(address)
+   {
+    geocoder.geocode( { 'address': address}, function(results, status) {
+     if (status == google.maps.GeocoderStatus.OK) {
+      var latLng = results[0].geometry.location ;
+      zippoly('(' + latLng.lat().toFixed(6) + ',' + latLng.lng().toFixed(6) + ')') ; 
+     } else {
+      alert('Geocode was not successful for the following reason: ' + status);
+     }
+    });
+   }
+
+   // Hide the Zip Code overlay...
+
+   function zipLayer()
+   {
+    if ( document.getElementById("zipLayerBox").checked )
+    {
+     imageMapType.set('opacity', 0.5); 
+    } else
+    {
+     imageMapType.set('opacity', 0); 
+    }
+   }
+
+   function blockAds()
+   {
+    adUnit.setMap(null) ;
+    document.getElementById("adBlock").style.display = 'none' ;
+   }
+
+   google.maps.event.addDomListener(window, 'load', initialize);
+
+  </script>
+
+ </head>
+ <body bgcolor="#D1D0CD" text="black" link="#444444" alink="gray" vlink="#111111">
+
+  <img src="http://www.google.com/mapfiles/marker.png" style="display:none" />
+  <img src="http://www.google.com/mapfiles/shadow50.png" style="display:none" />
+  <img src="http://www.google.com/mapfiles/markerTransparent.png" style="display:none" />
+  <img src="http://www.google.com/mapfiles/markerie.gif" style="display:none" />
+  <img src="http://www.google.com/mapfiles/dithshadow.gif" style="display:none" />
+
+  <div id="main" title="" style="border: 4px outset #99B3CC; background-color:#FFFA73; text-align:left; padding:4px;">
+   <div id="form" title="zip code search form" class="TEXT2" style="height:25px">
+    <form name=zipcode onsubmit="javascript:return false;">
+     Key Zip <input type=text name=zip> 
+     or Address <input type=text size=20 name=address>
+     <input type=BUTTON value="Find Zipcode" onclick="findzip(zipcode)" name="BUTTON">
+     or click on the map.
+    <input type=BUTTON value="Clear" onclick="clearmap(zipcode)" name="CLEARBUTTON">
+    <input type="checkbox" id="zipLayerBox" checked onclick="zipLayer()">Zip Layer
+    <g:plusone size="small"></g:plusone>
+    </form>
+   </div>
+   <table width="100%" height="100%" border=0 cellPadding=2 cellSpacing=2>
+    <tr>
+     <td>
+      <script language="javascript">
+      <!--
+      if( window.innerHeight )
+      {
+       var width = window.innerWidth - 344 ;
+       var height = window.innerHeight - 140 ; 
+       if (width < 200) { width = 200; }
+      } else
+      {
+       var width = document.documentElement.offsetWidth - 384 ;
+       var height = document.documentElement.offsetHeight - 180 ; 
+       if (width < 200) { width = 200; }
+      }
+      document.write('<div id="map-canvas" style="width: ' + width  + 'px; height:' + height + 'px; border: thin solid black;">') ;
+      // -->
+      </script>
+
+      </div>
+     </td>
+     <td width=303 valign=top align=left>
+      <script language="javascript">
+      <!--
+      document.write('<div id="message" title="sidebar message" style="width: 303px; height:' + (height - 280) + 'px; margin-bottom:30px; overflow: auto; font-family:Verdana,sans-serif;">') ;
+      // -->
+      </script>
+      </div>
+
+      <div id="adblock" title="Advertisement" style="width:300px; height:250px;float:right;">
+
+<!-- Conversant Media 300x250 Medium Rectangle CODE for Zip Code Maps -->
+<script type="text/javascript">var vclk_options = {sid:94403,media_id:6,media_type:8,version:"1.4"};</script><script class="vclk_pub_code" type="text/javascript" src="http://cdn.fastclick.net/js/adcodes/pubcode.min.js?sid=94403&media_id=6&media_type=8&version=1.4&exc=1"></script><noscript><a href="http://media.fastclick.net/w/click.here?sid=94403&m=6&c=1" target="_blank"><img src="http://media.fastclick.net/w/get.media?sid=94403&m=6&tp=8&d=s&c=1&vcm_acv=1.4" width="300" height="250" border="1"></a></noscript>
+<!-- Conversant Media 300x250 Medium Rectangle CODE for Zip Code Maps -->
+
+      </div>
+     </td>
+    </tr>
+   </table>
+   <div id="content" title="site description" style="height:70px; text-align:center;">
+    <font class="TEXT0">
+     Zip Code information on this map as of January, 2010. Source: USNaviguide LLC. County data as of 2009. Source: <a href="http://www.census.gov/geo/www/tiger/index.html" target=_new>Census Tiger program</a>. Area Codes as of 2007. Source: <a  href="http://www.maponics.com" target=_new>Maponics, Inc.</a>
+    <br/>
+    <a href="http://maps.huge.info/index.htm">Index</a> &nbsp;
+    <a href="http://www.usnaviguide.com/open/index.pl">Feedback</a> &nbsp;
+    <a href="http://www.usnaviguide.com/privacy-policy.htm">Privacy policy</a> &nbsp;
+    <a href="zip-instructions.htm" target=_new>Instructions</a> &nbsp;
+    <a href="http://maps.huge.info/blog/2009/09/problems_using_our_zip_code_ma.html" title="Zip Code Page Problems">Problems viewing this page</a>&nbsp;
+    <a href="http://www.usnaviguide.com/newmaps.htm">The New Maps</a><br>
+    Copyright &copy; 1996-2010 <a href="http://www.usnaviguide.com" target="_top">USNaviguide.com.</a> All rights reserved.
+    </font>
+   </div>
+  </div>
+  <div id="loading" class="HTEXT2" style="background-color:#D1D0CD; position:absolute; left:200px; top:200px;"></div>
+ </body>
+
+</html>

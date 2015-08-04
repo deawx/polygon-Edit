@@ -1,0 +1,577 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml">
+ <head>
+  <link rel="SHORTCUT ICON" href="/favicon.ico" type="image/x-icon" />
+  <link rel="canonical" href="http://www.zipmap.net/Illinois.htm">
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+  <meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7"/>
+  <meta name="description" content="This page shows a Google Map with an overlay of Zip Codes for the US State of Illinois. Users can  easily view the boundaries of each Zip Code and the state as a whole."/>
+  <meta name="keywords" content="Illinois,restaurants, real estate, homes for sale, shopping, sales territory, zip codes, boundaries, zipcode areas"/> 
+  <title>Illinois Zip Code Boundary Map (IL)</title>
+  <style type="text/css">
+  .TEXT0
+  {
+   font-family: Verdana, Sans-Serif, monospace;
+   font-size: .6em;
+  }
+  .TEXT1
+  {
+   font-family: Verdana, Sans-Serif, monospace;
+   font-size: .8em;
+  }
+  .TEXT2
+  {
+   font-family: Verdana, Sans-Serif, monospace;
+   font-size: 1em;
+  }
+  .HTEXT0
+  {
+   font-family: Verdana, Sans-Serif, monospace;
+   font-size: .6em;
+   color:red;
+  }
+  .HTEXT1
+  {
+   font-family: Verdana, Sans-Serif, monospace;
+   font-size: .8em;
+   color:red;
+  }
+  .HTEXT2
+  {
+   font-family: Verdana, Sans-Serif, monospace;
+   font-size: 1em;
+   color:red;
+  }
+  .HTEXT3
+  {
+   font-family: Verdana, Sans-Serif, monospace;
+   font-size: 1.5em;
+   color:red;
+  }
+  </style>
+
+  <script type="text/javascript">
+   // Stop some malicious behaviors...
+   if ( top != self) 
+   {
+    top.location.replace(document.location);
+    alert("For security reasons, framing is not allowed; click OK to remove the frames.")
+   }
+   if ( location.search.length > 0 )
+   {    
+    location.search = '' ;
+   }
+  </script>       
+
+  <script type="text/javascript" src="https://apis.google.com/js/plusone.js"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
+  <script type="text/javascript" src="/js/ProjectedOverlay.js"></script>
+  <script>
+   var map;
+   var overlay;
+   var imageMapType;
+   var geocoder;
+   var ZIP_MAPTYPE_ID = 'ziphybrid';
+   var chkar = [ ] ;					// Zips Found
+   var zipar = [ ] ;					// Zips Found
+   var marar = [ ] ;					// Marker Array
+   var icons = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'] ;
+   var lastclick = "" ;					// Last Clicked Point
+   var infowindow ;
+   var defWidth = 1081 ;
+   var defHeight = 762 ;
+   var winWidth = defWidth;
+   var winHeight = defHeight ;
+
+   var tskey = "a88abbb069" ;
+
+   function initialize() {
+   // Sizing section...
+
+    if ( typeof( window.innerWidth ) == 'number' )
+    {
+     // Modern Browser...
+
+     winWidth = window.innerWidth;
+     winHeight = window.innerHeight;
+    }
+
+    if ( winWidth < 836 ) { winWidth = 836; }
+    if ( winHeight < 630 ) { winHeight = 630; }
+
+    var diffHeight = winHeight - defHeight ;
+    var diffWidth = winWidth - defWidth ;
+
+    sizeDiv("main",diffWidth,diffHeight) ;
+    sizeDiv("map-canvas",diffWidth,diffHeight) ;
+    sizeDiv("sidebar",0,diffHeight) ;
+    sizeDiv("message",0,diffHeight) ;
+
+    geocoder = new google.maps.Geocoder();
+
+    imageMapType = new google.maps.ImageMapType({
+     getTileUrl: function(coord, zoom) {
+      if (zoom < 5 || zoom > 18 ) {
+       return null;
+      }
+      if (zoom <= 13 ) {
+       var url = "http://storage.googleapis.com/zipmap/tiles/" + zoom + "/" + coord.x + "/" + coord.y + ".png" ;
+       return url ;
+      }
+
+      var server = coord.x % 6 ;
+      var url = "http://ts" + server + ".usnaviguide.com/tileserver.pl?X=" + coord.x + "&Y=" + coord.y + "&Z=" + zoom + "&T=" + tskey + "&S=Z1001" ;
+      return url ;
+     },
+     tileSize: new google.maps.Size(256, 256),
+     opacity:.5,
+     name:ZIP_MAPTYPE_ID
+    });
+   
+    var mapOptions = {
+     minZoom: 5,
+     maxZoom: 18,
+     zoom: 5,
+     center: new google.maps.LatLng(35, -89),
+     mapTypeId: google.maps.MapTypeId.ROADMAP
+    };
+
+    map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
+
+    map.overlayMapTypes.push(imageMapType);
+
+    google.maps.event.addListener(map, 'click', function(e) {
+     zippoly(e.latLng,'');
+    });
+    infowindow = new google.maps.InfoWindow();
+
+    var bounds = new google.maps.LatLngBounds(new google.maps.LatLng(36.9702911376953,-91.5130920410156),new google.maps.LatLng(42.5083427429199,-87.0199203491211))
+
+    map.fitBounds(bounds) ;
+
+    overlay = new ProjectedOverlay(map,'http://ts1.usnaviguide.com/imageserver.pl?Z=S&K=1&N=IL' + '&T=' + tskey, bounds, {}) ;
+   }
+
+// Recalculate div sizes...
+
+   function sizeDiv(id,diffWidth,diffHeight)
+   {
+    var div = document.getElementById(id) ;
+
+    var width = parseInt(div.style.width) + diffWidth ;
+    if (width >= 1 )
+    {
+     div.style.width = width + "px";
+    }
+
+    var height = parseInt(div.style.height) + diffHeight ;
+    if (height >= 1 )
+    {
+     div.style.height = height + "px";
+    }
+   }
+
+// Find a zip code and cause it to be drawn on the map...
+
+   function findzip( zipcode )
+   {
+    if ( zipcode.address.value )
+    {
+     showAddress(zipcode.address.value) ;
+    } else if ( CheckZip( zipcode.zip.value ) > -1 )
+    {
+     alert("Zip Code Keyed Has Already Been Selected.") ;
+    } else
+    {
+     zippoly( 0, zipcode.zip.value ) ;
+    }
+   }
+
+// Clear overlays, Div area and restore map...
+
+   function clearmap( zipcode )
+   {
+    zipcode.zip.value = "" ;
+    document.getElementById("message").innerHTML = "" ;
+    for (var i = 0; i < marar.length; i++)
+    {
+     marar[i].setMap(null);
+    }
+    lastclick = "" ;
+    zipar = [ ] ;
+    chkar = [ ] ;
+    marar = [ ] ;
+   }
+
+// Check for a double click...
+
+   function checkclick ( point )
+   {
+    if ( lastclick != point )
+    {
+     lastclick = point ;
+     zippoly( point, '' ) ;
+    }
+   }
+
+// Open an Infowindow when the zip link is clicked in the message div...
+        
+   function zipLink(zip)
+   {
+    for (var i = 0; i < zipar.length; i++)
+    {
+     if ( zipar[i] == zip )
+     {
+      break ;
+     } 
+    }
+    google.maps.event.trigger(marar[i], 'click') ;
+   }
+
+// Check to see if a Zip has already been selected...
+        
+   function CheckZip(zip)
+   {
+    for (var i = 0; i < chkar.length; i++)
+    {
+     if ( chkar[i] == zip )
+     {
+      return(i) ;
+     } 
+    }
+    return(-1) ;
+   }
+
+// Find a zip code and return the coordinates along with other information...
+
+   function zippoly( point, zip )
+   {
+    if (window.XMLHttpRequest)
+    {		// code for IE7+, Firefox, Chrome, Opera, Safari
+     var request = new XMLHttpRequest() ;
+    } else
+    {		// code for IE6, IE5
+     var request = new ActiveXObject("Microsoft.XMLHTTP") ;
+    }
+
+    var parms = "POINT=" + point ;
+    if ( zip )
+    {
+     parms = "ZIP=" + zip ;
+    }
+    request.open("POST", "/zip.pl", true);
+    request.setRequestHeader('Content-Type','application/x-www-form-urlencoded') ;	// Thanks to Darkstar 3D!
+    request.onreadystatechange = function() 
+    {
+     document.getElementById("loading").innerHTML = "Loading, please wait..." ;
+
+     if (request.readyState == 4)
+     {
+      var xmlDoc = request.responseXML ;
+      try
+      {
+       if ( marar.length == 0 )
+       {
+        document.getElementById("message").innerHTML = "" ;
+       }
+       var info = xmlDoc.documentElement.getElementsByTagName("info") ;
+       var zipcode = info[0].getAttribute("zipcode") ;
+       var hitrem = parseInt(info[0].getAttribute("hitrem")) ;
+       if ( hitrem <= 1 )
+       {
+        alert("You have exhausted your requests for this time period. Please come back in 2 hours.") ;
+       } else if ( zipcode == "" )
+       {
+        alert("Area clicked not defined by a zip code") ;
+       } else
+       {
+        var zipindex = CheckZip( zipcode ) ;
+        if ( zipindex > -1 )
+        {
+         google.maps.event.trigger(marar[zipindex], "click") ;
+        } else
+        {
+         var lastpoint	= map.getCenter() ;
+         var point	= lastpoint ;
+         var zipname	= info[0].getAttribute("zipname") ;
+         var uspsst	= info[0].getAttribute("uspsst") ;
+         var stname	= info[0].getAttribute("stname") ;
+         var ctyname	= info[0].getAttribute("ctyname") ;
+         var county	= info[0].getAttribute("county") ;
+         var complex	= info[0].getAttribute("complex") ;
+         var pointzip	= info[0].getAttribute("pointzip") ;
+
+         chkar.push(zipcode) ;
+         var points = [] ;
+         var markers = xmlDoc.documentElement.getElementsByTagName("marker1");
+         for (var i = 0; i < markers.length; i++)
+         {
+          point = new google.maps.LatLng(parseFloat(markers[i].getAttribute("lat")),parseFloat(markers[i].getAttribute("lng"))) ;
+          html	= "<div style='width:200px; text-align:left;'><b>Zip Code:</b> " + zipcode + 
+                  "<br>" + zipname + 
+                  "<br>" + uspsst + " - " + stname +
+                  "<br>County:" + county + " - " + ctyname +
+                  "<br>Area Code(s):" + complex ;
+          if ( pointzip == 1 )
+          {
+           html += "<br>Point Zip - Not Mapped" ;
+          }
+
+          html	+= "</div>" ;
+          var number = marar.length ;
+          if ( number > icons.length )
+          {
+           number = icons.length ;
+          }
+          marar.push( createMarker( point, html, number ) ) ;
+          zipar.push(zipcode + "A") ;
+          var html	= icons[number] + " <a href=\"javascript:zipLink('" + zipcode + "A" + "')\">" + zipcode ;
+          html += "</a><br>&nbsp;" + zipname + ", " + uspsst + "<br>&nbsp;Area Code: " + complex + "<br>" ; 
+          document.getElementById("message").innerHTML =  html + document.getElementById("message").innerHTML ;
+         }
+         if ( point != lastpoint )
+         {
+          if( chkar.length > 1 )
+          {
+           map.setCenter( point ) ;
+          } else
+          {
+           map.setCenter( point ) ;
+           map.setZoom( 13 ) ;
+          }
+         }
+        }
+       }
+      } catch(e)
+      {
+       alert("Some error occured during program processing:" + e) ;
+      }       
+      document.getElementById("loading").innerHTML = "" ;
+     }
+    }
+    request.send(parms);
+   }
+
+// Create a marker at a point with an infowindow...
+
+   function createMarker(point, html, number) 
+   {
+    var image = { url: 'http://www.google.com/intl/en_us/mapfiles/marker' + icons[number] + '.png' } ;
+    var marker = new google.maps.Marker(
+    {
+      position: new google.maps.LatLng(point.lat(), point.lng()),
+      icon: image,
+      map: map
+    });
+
+    google.maps.event.addListener(marker, 'click', (function (marker, number)
+    {
+     return function ()
+     {
+      infowindow.setContent(html);
+      infowindow.open(map, marker);
+     }
+    })(marker, number));
+
+    return marker;
+   }
+
+   // Find the address using the geocoder...
+
+   function showAddress(address)
+   {
+    geocoder.geocode( { 'address': address}, function(results, status) {
+     if (status == google.maps.GeocoderStatus.OK) {
+      var latLng = results[0].geometry.location ;
+      zippoly('(' + latLng.lat().toFixed(6) + ',' + latLng.lng().toFixed(6) + ')') ; 
+     } else {
+      alert('Geocode was not successful for the following reason: ' + status);
+     }
+    });
+   }
+
+   // Hide the Zip Code overlay...
+
+   function zipLayer()
+   {
+    if ( document.getElementById("zipLayerBox").checked )
+    {
+     imageMapType.set('opacity', 0.5); 
+    } else
+    {
+     imageMapType.set('opacity', 0); 
+    }
+   }
+
+   google.maps.event.addDomListener(window, 'load', initialize);
+
+  </script>
+
+ </head>
+ <body bgcolor="#D1D0CD" text="black" link="#444444" alink="gray" vlink="#111111">
+
+  <div id="main" title="content starts here" style="width:1046px; height:730px; border: 4px outset #99B3CC; background-color:#FFFA73; text-align:left; padding:4px">
+   <div id="form" title="zip code entry form"  class="TEXT2" style="height:25px;">
+    <form name=zipcode onsubmit="javascript:return false;">
+     Key Zip <input type=text name=zip> 
+     or Address <input type=text size=20 name=address>
+     <input type=BUTTON value="Find Zipcode" onclick="findzip(zipcode)" name="BUTTON"> 
+     or click on the map.
+    <input type=BUTTON value="Clear" onclick="clearmap(zipcode)" name="CLEARBUTTON"/>
+    <input type="checkbox" id="zipLayerBox" checked onclick="zipLayer()">Zip Layer
+    <g:plusone size="small"></g:plusone>
+    </form>
+   </div>
+
+   <div id="map-sidebar"> 
+    <div id="sidebar" title="sidebar" style="width:346px; height:641px; float:right;line-height:120%;">
+     <div id="message" title="sidebar message" style="width:346px; height:322px; margin-bottom:10px; overflow:auto;">
+County Boundary Maps<br/>      <a href="/Illinois/Adams_County.htm">Adams County</a><br/>
+      <a href="/Illinois/Alexander_County.htm">Alexander County</a><br/>
+      <a href="/Illinois/Bond_County.htm">Bond County</a><br/>
+      <a href="/Illinois/Boone_County.htm">Boone County</a><br/>
+      <a href="/Illinois/Brown_County.htm">Brown County</a><br/>
+      <a href="/Illinois/Bureau_County.htm">Bureau County</a><br/>
+      <a href="/Illinois/Calhoun_County.htm">Calhoun County</a><br/>
+      <a href="/Illinois/Carroll_County.htm">Carroll County</a><br/>
+      <a href="/Illinois/Cass_County.htm">Cass County</a><br/>
+      <a href="/Illinois/Champaign_County.htm">Champaign County</a><br/>
+      <a href="/Illinois/Christian_County.htm">Christian County</a><br/>
+      <a href="/Illinois/Clark_County.htm">Clark County</a><br/>
+      <a href="/Illinois/Clay_County.htm">Clay County</a><br/>
+      <a href="/Illinois/Clinton_County.htm">Clinton County</a><br/>
+      <a href="/Illinois/Coles_County.htm">Coles County</a><br/>
+      <a href="/Illinois/Cook_County.htm">Cook County</a><br/>
+      <a href="/Illinois/Crawford_County.htm">Crawford County</a><br/>
+      <a href="/Illinois/Cumberland_County.htm">Cumberland County</a><br/>
+      <a href="/Illinois/DeKalb_County.htm">DeKalb County</a><br/>
+      <a href="/Illinois/De_Witt_County.htm">De Witt County</a><br/>
+      <a href="/Illinois/Douglas_County.htm">Douglas County</a><br/>
+      <a href="/Illinois/DuPage_County.htm">DuPage County</a><br/>
+      <a href="/Illinois/Edgar_County.htm">Edgar County</a><br/>
+      <a href="/Illinois/Edwards_County.htm">Edwards County</a><br/>
+      <a href="/Illinois/Effingham_County.htm">Effingham County</a><br/>
+      <a href="/Illinois/Fayette_County.htm">Fayette County</a><br/>
+      <a href="/Illinois/Ford_County.htm">Ford County</a><br/>
+      <a href="/Illinois/Franklin_County.htm">Franklin County</a><br/>
+      <a href="/Illinois/Fulton_County.htm">Fulton County</a><br/>
+      <a href="/Illinois/Gallatin_County.htm">Gallatin County</a><br/>
+      <a href="/Illinois/Greene_County.htm">Greene County</a><br/>
+      <a href="/Illinois/Grundy_County.htm">Grundy County</a><br/>
+      <a href="/Illinois/Hamilton_County.htm">Hamilton County</a><br/>
+      <a href="/Illinois/Hancock_County.htm">Hancock County</a><br/>
+      <a href="/Illinois/Hardin_County.htm">Hardin County</a><br/>
+      <a href="/Illinois/Henderson_County.htm">Henderson County</a><br/>
+      <a href="/Illinois/Henry_County.htm">Henry County</a><br/>
+      <a href="/Illinois/Iroquois_County.htm">Iroquois County</a><br/>
+      <a href="/Illinois/Jackson_County.htm">Jackson County</a><br/>
+      <a href="/Illinois/Jasper_County.htm">Jasper County</a><br/>
+      <a href="/Illinois/Jefferson_County.htm">Jefferson County</a><br/>
+      <a href="/Illinois/Jersey_County.htm">Jersey County</a><br/>
+      <a href="/Illinois/Jo_Daviess_County.htm">Jo Daviess County</a><br/>
+      <a href="/Illinois/Johnson_County.htm">Johnson County</a><br/>
+      <a href="/Illinois/Kane_County.htm">Kane County</a><br/>
+      <a href="/Illinois/Kankakee_County.htm">Kankakee County</a><br/>
+      <a href="/Illinois/Kendall_County.htm">Kendall County</a><br/>
+      <a href="/Illinois/Knox_County.htm">Knox County</a><br/>
+      <a href="/Illinois/Lake_County.htm">Lake County</a><br/>
+      <a href="/Illinois/LaSalle_County.htm">LaSalle County</a><br/>
+      <a href="/Illinois/Lawrence_County.htm">Lawrence County</a><br/>
+      <a href="/Illinois/Lee_County.htm">Lee County</a><br/>
+      <a href="/Illinois/Livingston_County.htm">Livingston County</a><br/>
+      <a href="/Illinois/Logan_County.htm">Logan County</a><br/>
+      <a href="/Illinois/Macon_County.htm">Macon County</a><br/>
+      <a href="/Illinois/Macoupin_County.htm">Macoupin County</a><br/>
+      <a href="/Illinois/Madison_County.htm">Madison County</a><br/>
+      <a href="/Illinois/Marion_County.htm">Marion County</a><br/>
+      <a href="/Illinois/Marshall_County.htm">Marshall County</a><br/>
+      <a href="/Illinois/Mason_County.htm">Mason County</a><br/>
+      <a href="/Illinois/Massac_County.htm">Massac County</a><br/>
+      <a href="/Illinois/McDonough_County.htm">McDonough County</a><br/>
+      <a href="/Illinois/McHenry_County.htm">McHenry County</a><br/>
+      <a href="/Illinois/McLean_County.htm">McLean County</a><br/>
+      <a href="/Illinois/Menard_County.htm">Menard County</a><br/>
+      <a href="/Illinois/Mercer_County.htm">Mercer County</a><br/>
+      <a href="/Illinois/Monroe_County.htm">Monroe County</a><br/>
+      <a href="/Illinois/Montgomery_County.htm">Montgomery County</a><br/>
+      <a href="/Illinois/Morgan_County.htm">Morgan County</a><br/>
+      <a href="/Illinois/Moultrie_County.htm">Moultrie County</a><br/>
+      <a href="/Illinois/Ogle_County.htm">Ogle County</a><br/>
+      <a href="/Illinois/Peoria_County.htm">Peoria County</a><br/>
+      <a href="/Illinois/Perry_County.htm">Perry County</a><br/>
+      <a href="/Illinois/Piatt_County.htm">Piatt County</a><br/>
+      <a href="/Illinois/Pike_County.htm">Pike County</a><br/>
+      <a href="/Illinois/Pope_County.htm">Pope County</a><br/>
+      <a href="/Illinois/Pulaski_County.htm">Pulaski County</a><br/>
+      <a href="/Illinois/Putnam_County.htm">Putnam County</a><br/>
+      <a href="/Illinois/Randolph_County.htm">Randolph County</a><br/>
+      <a href="/Illinois/Richland_County.htm">Richland County</a><br/>
+      <a href="/Illinois/Rock_Island_County.htm">Rock Island County</a><br/>
+      <a href="/Illinois/Saline_County.htm">Saline County</a><br/>
+      <a href="/Illinois/Sangamon_County.htm">Sangamon County</a><br/>
+      <a href="/Illinois/Schuyler_County.htm">Schuyler County</a><br/>
+      <a href="/Illinois/Scott_County.htm">Scott County</a><br/>
+      <a href="/Illinois/Shelby_County.htm">Shelby County</a><br/>
+      <a href="/Illinois/Stark_County.htm">Stark County</a><br/>
+      <a href="/Illinois/St._Clair_County.htm">St. Clair County</a><br/>
+      <a href="/Illinois/Stephenson_County.htm">Stephenson County</a><br/>
+      <a href="/Illinois/Tazewell_County.htm">Tazewell County</a><br/>
+      <a href="/Illinois/Union_County.htm">Union County</a><br/>
+      <a href="/Illinois/Vermilion_County.htm">Vermilion County</a><br/>
+      <a href="/Illinois/Wabash_County.htm">Wabash County</a><br/>
+      <a href="/Illinois/Warren_County.htm">Warren County</a><br/>
+      <a href="/Illinois/Washington_County.htm">Washington County</a><br/>
+      <a href="/Illinois/Wayne_County.htm">Wayne County</a><br/>
+      <a href="/Illinois/White_County.htm">White County</a><br/>
+      <a href="/Illinois/Whiteside_County.htm">Whiteside County</a><br/>
+      <a href="/Illinois/Will_County.htm">Will County</a><br/>
+      <a href="/Illinois/Williamson_County.htm">Williamson County</a><br/>
+      <a href="/Illinois/Winnebago_County.htm">Winnebago County</a><br/>
+      <a href="/Illinois/Woodford_County.htm">Woodford County</a><br/>
+
+     </div>
+     <div id="adblocktitle" style="width:346px; height:30px;">
+      <font class="TEXT1">Advertisement</font>
+     </div>
+     <div id="adblock" title="advertisement" style="width:336px; height:280px; margin-left:10px;">
+<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<!-- 336x280 -->
+<ins class="adsbygoogle"
+     style="display:inline-block;width:336px;height:280px"
+     data-ad-client="ca-pub-8459461757728965"
+     data-ad-slot="4055674998"></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+     </div>
+    </div> 
+
+    <div id="map-canvas" title="Google Map" style="width:690px; height:641px; border: thin solid black;"/>
+   </div>
+   <div id="content" title="site description" style="height:60px; text-align:center; line-height:80%;">
+    <font class="TEXT0">
+    This page shows a Google Map with an overlay of Zip Codes for the US State of Illinois. <br/>
+    Users can  easily view the boundaries of each Zip Code and the state as a whole.     
+    </font><br/>
+    <a class="HTEXT0" href="/">Index</a> &nbsp;
+    <a class="HTEXT0" href="/zip-instructions.htm" target=_new>Instructions</a> &nbsp;
+    <a class="HTEXT0" href="/privacy-policy.htm">Privacy Policy</a> &nbsp;
+    <a class="HTEXT0" href="http://www.usnaviguide.com/newmaps.htm">The New Maps</a><br/>
+    <font class="TEXT0">
+    Illinois Zip Code Map Version 3.1 &nbsp; Copyright &copy; 1996-2014 <a href="http://www.usnaviguide.com" target="_top">John Coryat - USNaviguide.</a> All rights reserved.
+    </font>
+   </div>
+  </div>
+  <div id="loading" title="loading message for map" class="HTEXT2" style="background-color:#D1D0CD; position:absolute; left:400px; top:200px;"/>
+ </body>
+ <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-813480-3', 'auto');
+  ga('send', 'pageview');
+
+ </script>
+</html>

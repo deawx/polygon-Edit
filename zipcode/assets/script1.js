@@ -3599,13 +3599,18 @@ function() {
 		window.ZipAreasMap || (window.ZipAreasMap = {}), $(function() {
 			return ZipAreasMap.selectedZipCodes = $("#zip-codes").val().split(","), ZipAreasMap.initialize(), $("#selected-zip-codes").text(ZipAreasMap.selectedZipCodes), $("#change-color").click(function() {
 				var e;
-				return e = RandomColor.generate(), ZipAreasMap.polygons.forEach(function(t) {
+				console.log(ZipAreasMap);
+				 e = RandomColor.generate(), ZipAreasMap.polygons.forEach(function(t) {
+					console.log(e);
 					return t.setOptions({
 						fillColor: e,
 						strokeColor: e
 					})
 				})
 			})
+			ZipAreasMap.zipCodes.polygons[2].fillColor= "#000000",
+			ZipAreasMap.zipCodes.polygons[2].strokeColor= "#000000" ;
+					
 		})
 	}.call(this),
 	function() {
@@ -4442,3 +4447,4 @@ function() {
 			}
 		})
 	}.call(this);
+	console.log("ss");
