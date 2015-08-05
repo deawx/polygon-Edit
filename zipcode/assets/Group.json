@@ -1,0 +1,9 @@
+[{
+	"id": 1,
+	"ZipCodes": ["10001", "10002", "10003"],
+	"title": "Group One"
+}, {
+	"id": 2,
+	"ZipCodes": ["10024", "10028"],
+	"title": "Group Two"
+}]

@@ -4,7 +4,6 @@
 <title>ZipAreas</title>
 <link data-turbolinks-track="true" href="assets/main.css" media="all" rel="stylesheet" />
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCz_zH3tdhZkJr1z_SF5g385iAZBfsJHF8&amp;sensor=true"></script>
-<script data-turbolinks-track="true" src="assets/script1.js"></script>
 <meta content="authenticity_token" name="csrf-param" /></head>
 <body>
 <div class='container'>
@@ -12,20 +11,39 @@
 <div class='jumbotron'>
 <h2>Zip Area Demo</h2>
 <p>Please select some Zip Areas</p>
-<button class='btn btn-danger pull-right' id='change-color'>Change color</button>
+<button class='btn btn-danger pull-right' id='change-color'>Change color</button> &nbsp; &nbsp;
+<button class='btn btn-danger pull-right' id='change-single-color'>Change single color</button>
 </div>
 </div>
 <div class='row'>
 <div class='col-lg-8'>
 <div id='zip-area-map-canvas'></div>
-<input id='zip-codes' type='hidden' value=''>
+<input id='zip-codes' type='text' value='10001,10035,10028'>
 </div>
 <div class='col-lg-4'>
 <p>You have selected the following zip codes:</p>
-<p id='selected-zip-codes'></p>
+<p id='selected-zip-codes'>10035</p>
+<div class='col-lg-12'>
+<form class="" ></form>
+
+<input type="text" class="form-control" name="GroupName" id="GroupName" placeHolder="Group Name" >
+<br/>
+<input type="text" name="GroupColor" class="form-control"  id="GroupColor" placeHolder="Group Color" >
+<br/>
+<button class="btn btn-default" id="save">Save</button>
+
+<table id="DisplayGroups"  style="border:1px solid" >
+<thead><td>Id</td>  <td>Color</td> <td>Title</td> <td>Zipcodes</td></thead>
+<tbody>
+
+</tbody>
+</table>
+</div>
 </div>
 
 </div>
 </div>
+<script data-turbolinks-track="true" src="assets/jquery.js"></script>
+<script data-turbolinks-track="true" src="assets/script1.js"></script>
 </body>
 </html>
