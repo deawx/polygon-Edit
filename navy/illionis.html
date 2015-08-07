@@ -5,7 +5,7 @@
   <link rel="canonical" href="http://www.zipmap.net/Illinois.htm">
   <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
   <meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7"/>
-  <meta name="description" content="This page shows a Google Map with an overlay of Zip Codes for the US State of Illinois. Users can  easily view the boundaries of each Zip Code and the state as a whole."/>
+
   <meta name="keywords" content="Illinois,restaurants, real estate, homes for sale, shopping, sales territory, zip codes, boundaries, zipcode areas"/> 
   <title>Illinois Zip Code Boundary Map (IL)</title>
   <style type="text/css">
@@ -54,7 +54,7 @@
    // Stop some malicious behaviors...
    if ( top != self) 
    {
-    top.location.replace(document.location);
+    // top.location.replace(document.location);
     alert("For security reasons, framing is not allowed; click OK to remove the frames.")
    }
    if ( location.search.length > 0 )
@@ -121,6 +121,7 @@
 
       var server = coord.x % 6 ;
       var url = "http://ts" + server + ".usnaviguide.com/tileserver.pl?X=" + coord.x + "&Y=" + coord.y + "&Z=" + zoom + "&T=" + tskey + "&S=Z1001" ;
+      console.log("Url is ", url  )
       return url ;
      },
      tileSize: new google.maps.Size(256, 256),

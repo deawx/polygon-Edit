@@ -120,7 +120,7 @@
                <outline>1</outline>
             </PolyStyle>
             <LineStyle>
-               <color>7f000000</color>
+               <color>ff0000</color>
                <width>1</width>
             </LineStyle>
          </Style>
